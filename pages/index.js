@@ -1,9 +1,9 @@
 import { useRouter } from 'next/router'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createMuiTheme, ThemeProvider } from '@material-ui/core/styles'
 import { amber, deepOrange, lightBlue } from '@material-ui/core/colors'
 import { Controls, Main, PageHead, PlayArea } from '../components'
-import { addBiscuit, updateUrlParams } from '../utils'
+import { addBiscuit, parseValue, updateUrlParams } from '../utils'
 
 const initialBiscuits = {
   yellow: [],
@@ -13,11 +13,30 @@ const initialBiscuits = {
 const Home = () => {
   const [isYellow, setIsYellow] = useState(true)
   const [biscuits, setBiscuits] = useState(initialBiscuits)
+  const firstUpdate = useRef(true)
   const router = useRouter()
 
   useEffect(() => {
-    updateUrlParams(biscuits, router)
+    firstUpdate.current
+      ? (firstUpdate.current = false)
+      : updateUrlParams(biscuits, router)
+    console.log(biscuits)
   }, [biscuits])
+
+  useEffect(() => {
+    // why doesn't router.query work?
+    // https://github.com/vercel/next.js/discussions/11484
+    const urlParams = router.asPath.replace('/?', '')
+
+    const parsed = urlParams.split('&').reduce((acc, p) => {
+      const [key, value] = p.split('=')
+      const parsedValue = parseValue(value)
+      acc[key] = parsedValue
+      return acc
+    }, {})
+
+    setBiscuits(parsed)
+  }, [])
 
   return (
     <>
